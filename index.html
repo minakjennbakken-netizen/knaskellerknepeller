@@ -244,6 +244,14 @@ h2.h.helltitle{position:absolute;left:0;right:0;top:330px;font-size:260px;color:
 .hb{font-family:var(--f-head);font-size:28px;padding:10px 28px;border:1px solid rgba(255,160,90,.35);border-radius:4px;background:rgba(0,0,0,.55);color:#ffb986;opacity:.32;transition:opacity .2s,transform .15s,box-shadow .15s}
 .hb:hover,.hb:focus{opacity:1;border-color:#fff2c2;box-shadow:0 0 0 4px rgba(255,120,40,.5),0 0 50px rgba(255,90,20,.6);transform:scale(1.05)}
 
+/* ---------- phone as the screen ---------- */
+#rotate{display:none;position:fixed;inset:0;z-index:200;background:#060407;color:#ffb347;align-items:center;justify-content:center;text-align:center;padding:30px;font-family:var(--f-title);font-size:54px;line-height:1.1;text-shadow:0 0 30px rgba(255,59,0,.6)}
+@media (orientation:portrait) and (max-width:900px){#rotate{display:flex}}
+#exitspot{display:none;position:fixed;left:0;top:0;width:170px;height:170px;z-index:60;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+body.hell #exitspot{display:block}
+#exitspot.hold::after{content:"";position:absolute;left:30px;top:30px;width:76px;height:76px;border-radius:50%;border:4px solid rgba(255,170,100,.95);box-shadow:0 0 24px rgba(255,90,20,.7);animation:holdring 1.8s linear forwards}
+@keyframes holdring{from{transform:scale(.3);opacity:.2}to{transform:scale(1);opacity:1}}
+
 /* ====================== PHONE REMOTE ====================== */
 html.remote #hell{display:none}
 html:not(.remote) #remote{display:none}
@@ -299,6 +307,7 @@ html.remote body{font-size:19px;background:radial-gradient(ellipse at 50% 0%,#1e
   <header id="bar">
     <button class="brand" data-go="gate">Knask eller Knep,<br>eller Terrorangrep</button>
     <div id="roster"></div>
+    <button class="tool" id="bBack">Rommene</button>
     <button class="tool" id="bMode"></button>
     <button class="tool" id="bSound"></button>
   </header>
@@ -319,6 +328,9 @@ html.remote body{font-size:19px;background:radial-gradient(ellipse at 50% 0%,#1e
 <svg class="web" id="webR" viewBox="0 0 120 120" fill="none" stroke="#efe5cf" stroke-width=".6"></svg>
 <div id="blackout"></div>
 <div id="scare"></div>
+
+<div id="rotate">Snu telefonen sideveis</div>
+<div id="exitspot"></div>
 
 <!-- phone remote -->
 <div id="remote">
@@ -1716,6 +1728,22 @@ views.hall=()=>{
   draw2();
 };
 
+/* ---- standalone extras for a touch screen ---- */
+$('#bBack').onclick=()=>back();
+/* hold a finger in the top-left corner for two seconds to leave the backdrop rooms (they have no buttons) */
+{
+  const hs=$('#exitspot');let hsT=0;
+  hs.addEventListener('pointerdown',()=>{if(!document.body.classList.contains('hell'))return;hs.classList.add('hold');clearTimeout(hsT);hsT=setTimeout(()=>{hs.classList.remove('hold');go('hub');},1800);});
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>hs.addEventListener(ev,()=>{clearTimeout(hsT);hs.classList.remove('hold');}));
+}
+/* keep the screen awake while the game runs (iOS 16.4 and newer, Chrome on Android) */
+{
+  let wl=null;
+  const lock=async()=>{try{if('wakeLock' in navigator&&document.visibilityState==='visible'&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;});}}catch(e){}};
+  addEventListener('pointerdown',lock,{passive:true});addEventListener('keydown',lock);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lock();});
+  lock();
+}
 go('gate');
 }
 })();
